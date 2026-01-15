@@ -6,7 +6,7 @@
   padding: 0.75rem 1rem;
   background: var(--primary-very-low);
   color: var(--primary-high);
-  user-select: none;
+  user-select: text;
 }
 
 .secure-hide-placeholder::before {
@@ -127,7 +127,7 @@ span.secure-hide-content {
 }
 
 .secure-hide-content__body {
-  user-select: none;
+  user-select: text;
 }
 
 .secure-hide-content--privileged {

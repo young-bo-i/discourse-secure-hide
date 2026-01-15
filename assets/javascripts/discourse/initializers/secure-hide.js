@@ -198,6 +198,42 @@ function initializeSecureHide(api) {
     return;
   }
 
+  api.modifyClass("component:post-text-selection", (Superclass) => {
+    return class extends Superclass {
+      computeCurrentCooked() {
+        const cooked = super.computeCurrentCooked();
+        if (!cooked) {
+          return cooked;
+        }
+
+        const selection = window.getSelection();
+        if (!selection?.rangeCount) {
+          return cooked;
+        }
+
+        const range = selection.getRangeAt(0);
+        const startElement =
+          range.startContainer?.nodeType === Node.ELEMENT_NODE
+            ? range.startContainer
+            : range.startContainer?.parentElement;
+        const endElement =
+          range.endContainer?.nodeType === Node.ELEMENT_NODE
+            ? range.endContainer
+            : range.endContainer?.parentElement;
+
+        const selector = ".secure-hide-content, .secure-hide-placeholder";
+        if (
+          startElement?.closest?.(selector) ||
+          endElement?.closest?.(selector)
+        ) {
+          return;
+        }
+
+        return cooked;
+      }
+    };
+  });
+
   api.onAppEvent("page:like-toggled", (post, likeAction) => {
     if (!likeAction?.acted) {
       return;
