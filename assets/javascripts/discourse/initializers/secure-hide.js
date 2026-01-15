@@ -2,8 +2,8 @@ import { next } from "@ember/runloop";
 import { ajax } from "discourse/lib/ajax";
 import { popupAjaxError } from "discourse/lib/ajax-error";
 import getURL from "discourse/lib/get-url";
+import { iconElement } from "discourse/lib/icon-library";
 import { withPluginApi } from "discourse/lib/plugin-api";
-import Composer from "discourse/models/composer";
 import { i18n } from "discourse-i18n";
 
 const pendingReplyUnlockPostIds = new Set();
@@ -16,6 +16,7 @@ function buildRequirementsList({ actions }) {
 
   for (const action of actions) {
     const item = document.createElement("li");
+    item.dataset.secureHideAction = action;
     item.textContent = i18n(`secure_hide.requirements.action.${action}`);
     list.append(item);
   }
@@ -39,13 +40,14 @@ function setPlaceholderContents(placeholder, { mode, actions, loggedIn }) {
   }
 
   placeholder.append(notice);
-  placeholder.append(buildRequirementsList({ actions }));
+  const requirements = buildRequirementsList({ actions });
+  placeholder.append(requirements);
 
   const actionsRow = document.createElement("div");
   actionsRow.className = "secure-hide-placeholder__actions";
   placeholder.append(actionsRow);
 
-  return actionsRow;
+  return { actionsRow, requirements };
 }
 
 function addLoginLink(actionsRow) {
@@ -56,24 +58,36 @@ function addLoginLink(actionsRow) {
   actionsRow.append(link);
 }
 
-function addButton(actionsRow, { label, onClick }) {
+function addActionButton(actionsRow, { label, icon, classes, onClick }) {
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "btn btn-primary";
-  button.textContent = label;
+  button.className = `btn btn-flat btn-icon-text secure-hide-action-button ${
+    classes || ""
+  }`.trim();
+
+  if (icon) {
+    button.append(
+      iconElement(icon, { class: "secure-hide-action-button__icon" })
+    );
+  }
+
+  const text = document.createElement("span");
+  text.className = "d-button-label secure-hide-action-button__label";
+  text.textContent = label;
+  button.append(text);
+
   button.addEventListener("click", onClick);
   actionsRow.append(button);
   return button;
 }
 
-function addSecondaryButton(actionsRow, { label, onClick }) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "btn btn-default";
-  button.textContent = label;
-  button.addEventListener("click", onClick);
-  actionsRow.append(button);
-  return button;
+function updateRequirementState(requirements, satisfiedActions = new Set()) {
+  const items = requirements.querySelectorAll("li[data-secure-hide-action]");
+  items.forEach((item) => {
+    const action = item.dataset.secureHideAction;
+    const satisfied = satisfiedActions.has(action);
+    item.classList.toggle("is-satisfied", satisfied);
+  });
 }
 
 function replaceWithUnlockedContent(placeholder, { html, reason }) {
@@ -140,8 +154,22 @@ async function unlockPostBlocks(
         });
       }
     }
+
+    return true;
   } catch (error) {
     if (error?.jqXHR?.status === 403) {
+      const responseJson = error?.jqXHR?.responseJSON;
+      const satisfied = new Set(responseJson?.satisfied_actions || []);
+
+      for (const placeholder of placeholders) {
+        const requirements = placeholder.querySelector(
+          ".secure-hide-placeholder__requirements"
+        );
+        if (requirements) {
+          updateRequirementState(requirements, satisfied);
+        }
+      }
+
       if (showLockedNotice) {
         for (const placeholder of placeholders) {
           const notice = placeholder.querySelector(
@@ -152,10 +180,11 @@ async function unlockPostBlocks(
           }
         }
       }
-      return;
+      return false;
     }
 
     popupAjaxError(error);
+    return false;
   } finally {
     for (const placeholder of placeholders) {
       placeholder.classList.remove("is-loading");
@@ -195,7 +224,9 @@ function initializeSecureHide(api) {
       return;
     }
 
-    unlockPostBlocks(postElement, post.id.toString());
+    unlockPostBlocks(postElement, post.id.toString(), {
+      showLockedNotice: true,
+    });
   });
 
   api.onAppEvent("post:created", (createdPost) => {
@@ -221,7 +252,9 @@ function initializeSecureHide(api) {
           continue;
         }
 
-        unlockPostBlocks(postElement, postId.toString());
+        unlockPostBlocks(postElement, postId.toString(), {
+          showLockedNotice: true,
+        });
       }
 
       if (!createdPost?.topic_id) {
@@ -260,7 +293,9 @@ function initializeSecureHide(api) {
           continue;
         }
 
-        unlockPostBlocks(postElement, postId.toString());
+        unlockPostBlocks(postElement, postId.toString(), {
+          showLockedNotice: true,
+        });
       }
     });
   });
@@ -293,7 +328,7 @@ function initializeSecureHide(api) {
           .map((a) => a.trim())
           .filter(Boolean);
 
-        const actionsRow = setPlaceholderContents(placeholder, {
+        const { actionsRow } = setPlaceholderContents(placeholder, {
           mode,
           actions,
           loggedIn: !!currentUser,
@@ -342,11 +377,12 @@ function initializeSecureHide(api) {
               document;
             const domLike = postRoot.querySelector("button.toggle-like");
             domLike?.click();
-            tryUnlock();
           };
 
-          const likeButton = addSecondaryButton(actionsRow, {
+          const likeButton = addActionButton(actionsRow, {
+            icon: "d-unliked",
             label: i18n("secure_hide.button.like"),
+            classes: "secure-hide-action-button--like",
             onClick: onLikeClick,
           });
 
@@ -376,25 +412,28 @@ function initializeSecureHide(api) {
               placeholder.closest("article") ||
               placeholder.closest(".topic-post") ||
               document;
-            const replyButton = postRoot.querySelector("button.reply");
+            const replyButton = postRoot.querySelector(
+              "button.post-action-menu__reply.reply"
+            );
             if (replyButton) {
               replyButton.click();
               return;
             }
 
-            if (!model) {
+            const topic = api.container.lookup("controller:topic")?.model;
+            if (topic && composer.focusComposer) {
+              const postNumber =
+                model?.get?.("post_number") ?? model?.post_number;
+              composer.focusComposer({
+                topic,
+                openOpts: postNumber === 1 ? {} : { post: model },
+              });
               return;
             }
 
-            const composerOpts = { action: Composer.REPLY };
-            const postNumber = model.get?.("post_number") ?? model.post_number;
-            if (postNumber === 1) {
-              composerOpts.topic = model.get?.("topic") ?? model.topic;
-            } else {
-              composerOpts.post = model;
+            if (composer.focusComposer) {
+              composer.focusComposer({ fallbackToNewTopic: true });
             }
-
-            composer.open(composerOpts);
           };
 
           const onPlaceholderClick = (event) => {
@@ -402,9 +441,10 @@ function initializeSecureHide(api) {
               return;
             }
 
-            const interactiveElement = event.target.closest(
-              "a, button, input, textarea, select"
-            );
+            const interactiveElement =
+              event.target instanceof Element
+                ? event.target.closest("a, button, input, textarea, select")
+                : null;
             if (interactiveElement) {
               return;
             }
@@ -412,8 +452,10 @@ function initializeSecureHide(api) {
             onReplyClick();
           };
 
-          const replyButton = addButton(actionsRow, {
+          const replyButton = addActionButton(actionsRow, {
+            icon: "reply",
             label: i18n("secure_hide.button.reply"),
+            classes: "create secure-hide-action-button--reply",
             onClick: onReplyClick,
           });
 

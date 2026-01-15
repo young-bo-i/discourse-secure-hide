@@ -13,12 +13,18 @@ module DiscourseSecureHide
       data = post.custom_fields[DiscourseSecureHide::POST_CUSTOM_FIELD]
       raise Discourse::NotFound if data.blank?
 
-      actions = Array(data["actions"]).map(&:to_s)
-      mode = data["mode"].to_s
+      status = DiscourseSecureHide::Visibility.status_for(guardian: guardian, post: post)
+      raise Discourse::NotFound if status.blank?
 
-      reason = DiscourseSecureHide::Visibility.reason_for(guardian: guardian, post: post)
-      if reason.blank?
-        render_json_error(I18n.t("secure_hide.errors.not_unlocked"), status: 403)
+      if !status[:allowed]
+        render json: {
+                 error: I18n.t("secure_hide.errors.not_unlocked"),
+                 post_id: post.id,
+                 mode: status[:mode],
+                 actions: status[:actions],
+                 satisfied_actions: status[:satisfied_actions],
+               },
+               status: :forbidden
         return
       end
 
@@ -29,9 +35,10 @@ module DiscourseSecureHide
 
       render json: {
                post_id: post.id,
-               mode: mode,
-               actions: actions,
-               visible_reason: reason,
+               mode: status[:mode],
+               actions: status[:actions],
+               satisfied_actions: status[:satisfied_actions],
+               visible_reason: status[:visible_reason],
                blocks: blocks,
              }
     end
