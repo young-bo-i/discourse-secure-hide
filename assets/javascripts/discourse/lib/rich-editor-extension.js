@@ -88,26 +88,26 @@ const extension = {
     },
 
     wrap_bbcode(state, token) {
-      const klass = token.attrGet("class") || "";
-      if (!/\bsecure-hide\b/.test(klass)) {
-        return;
+      if (
+        token.nesting === -1 &&
+        SECURE_HIDE_NODES.includes(state.top().type.name)
+      ) {
+        state.closeNode();
+        return true;
       }
 
       if (token.nesting === 1) {
+        const klass = token.attrGet("class") || "";
+        if (!/\bsecure-hide\b/.test(klass)) {
+          return;
+        }
+
         const attrs = parseTokenAttrs(token);
         const nodeType =
           token.tag === "span"
             ? state.schema.nodes.inline_secure_hide
             : state.schema.nodes.secure_hide;
         state.openNode(nodeType, attrs);
-        return true;
-      }
-
-      if (
-        token.nesting === -1 &&
-        SECURE_HIDE_NODES.includes(state.top().type.name)
-      ) {
-        state.closeNode();
         return true;
       }
     },

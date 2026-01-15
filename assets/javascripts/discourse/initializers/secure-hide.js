@@ -1,3 +1,4 @@
+import { next } from "@ember/runloop";
 import { ajax } from "discourse/lib/ajax";
 import { popupAjaxError } from "discourse/lib/ajax-error";
 import getURL from "discourse/lib/get-url";
@@ -198,66 +199,70 @@ function initializeSecureHide(api) {
   });
 
   api.onAppEvent("post:created", (createdPost) => {
-    const ids = [...pendingReplyUnlockPostIds];
-    pendingReplyUnlockPostIds.clear();
+    next(() => {
+      const ids = [...pendingReplyUnlockPostIds];
+      pendingReplyUnlockPostIds.clear();
 
-    for (const postId of ids) {
-      const topicId = pendingReplyUnlockTopicIdsByPostId.get(postId);
-      pendingReplyUnlockTopicIdsByPostId.delete(postId);
-      if (
-        topicId &&
-        createdPost?.topic_id &&
-        topicId !== createdPost.topic_id
-      ) {
-        continue;
+      for (const postId of ids) {
+        const topicId = pendingReplyUnlockTopicIdsByPostId.get(postId);
+        pendingReplyUnlockTopicIdsByPostId.delete(postId);
+        if (
+          topicId &&
+          createdPost?.topic_id &&
+          topicId !== createdPost.topic_id
+        ) {
+          continue;
+        }
+
+        const postElement = document.querySelector(
+          `article#post_${postId}, .topic-post[data-post-id="${postId}"]`
+        );
+        if (!postElement) {
+          continue;
+        }
+
+        unlockPostBlocks(postElement, postId.toString());
       }
 
-      const postElement = document.querySelector(
-        `article#post_${postId}, .topic-post[data-post-id="${postId}"]`
-      );
-      if (!postElement) {
-        continue;
-      }
-
-      unlockPostBlocks(postElement, postId.toString());
-    }
-
-    if (!createdPost?.topic_id) {
-      return;
-    }
-
-    const placeholders = document.querySelectorAll(".secure-hide-placeholder");
-    if (!placeholders.length) {
-      return;
-    }
-
-    const postIdsToTry = new Set();
-    placeholders.forEach((placeholder) => {
-      const actions = (placeholder.dataset.secureHideActions || "")
-        .split(",")
-        .map((action) => action.trim())
-        .filter(Boolean);
-
-      if (!actions.includes("reply")) {
+      if (!createdPost?.topic_id) {
         return;
       }
 
-      const placeholderPostId = placeholder.dataset.secureHidePostId;
-      if (placeholderPostId) {
-        postIdsToTry.add(placeholderPostId);
+      const placeholders = document.querySelectorAll(
+        ".secure-hide-placeholder"
+      );
+      if (!placeholders.length) {
+        return;
+      }
+
+      const postIdsToTry = new Set();
+      placeholders.forEach((placeholder) => {
+        const actions = (placeholder.dataset.secureHideActions || "")
+          .split(",")
+          .map((action) => action.trim())
+          .filter(Boolean);
+
+        if (!actions.includes("reply")) {
+          return;
+        }
+
+        const placeholderPostId = placeholder.dataset.secureHidePostId;
+        if (placeholderPostId) {
+          postIdsToTry.add(placeholderPostId);
+        }
+      });
+
+      for (const postId of postIdsToTry) {
+        const postElement = document.querySelector(
+          `article#post_${postId}, .topic-post[data-post-id="${postId}"]`
+        );
+        if (!postElement) {
+          continue;
+        }
+
+        unlockPostBlocks(postElement, postId.toString());
       }
     });
-
-    for (const postId of postIdsToTry) {
-      const postElement = document.querySelector(
-        `article#post_${postId}, .topic-post[data-post-id="${postId}"]`
-      );
-      if (!postElement) {
-        continue;
-      }
-
-      unlockPostBlocks(postElement, postId.toString());
-    }
   });
 
   api.decorateCookedElement(
@@ -354,7 +359,8 @@ function initializeSecureHide(api) {
           const onReplyClick = () => {
             const replyUnlockPostId =
               placeholder.dataset.secureHidePostId || postId?.toString();
-            const resolvedTopicId = model?.topic_id;
+            const resolvedTopicId =
+              model?.topic_id ?? model?.topicId ?? model?.get?.("topic_id");
 
             if (replyUnlockPostId) {
               pendingReplyUnlockPostIds.add(replyUnlockPostId.toString());
@@ -364,6 +370,16 @@ function initializeSecureHide(api) {
                   resolvedTopicId
                 );
               }
+            }
+
+            const postRoot =
+              placeholder.closest("article") ||
+              placeholder.closest(".topic-post") ||
+              document;
+            const replyButton = postRoot.querySelector("button.reply");
+            if (replyButton) {
+              replyButton.click();
+              return;
             }
 
             if (!model) {
