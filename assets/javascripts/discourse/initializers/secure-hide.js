@@ -267,16 +267,29 @@ function initializeSecureHide(api) {
 
   api.onAppEvent("post:created", (createdPost) => {
     next(() => {
+      const createdTopicIdRaw =
+        createdPost?.topic_id ??
+        createdPost?.topicId ??
+        createdPost?.get?.("topic_id") ??
+        createdPost?.get?.("topicId");
+      const createdTopicId =
+        createdTopicIdRaw === null || createdTopicIdRaw === undefined
+          ? null
+          : createdTopicIdRaw.toString();
+
       const ids = [...pendingReplyUnlockPostIds];
       pendingReplyUnlockPostIds.clear();
 
       for (const postId of ids) {
         const topicId = pendingReplyUnlockTopicIdsByPostId.get(postId);
         pendingReplyUnlockTopicIdsByPostId.delete(postId);
+        const topicIdString =
+          topicId === null || topicId === undefined ? null : topicId.toString();
+
         if (
-          topicId &&
-          createdPost?.topic_id &&
-          topicId !== createdPost.topic_id
+          topicIdString &&
+          createdTopicId &&
+          topicIdString !== createdTopicId
         ) {
           continue;
         }
@@ -293,7 +306,7 @@ function initializeSecureHide(api) {
         });
       }
 
-      if (!createdPost?.topic_id) {
+      if (!createdTopicId) {
         return;
       }
 
@@ -312,6 +325,12 @@ function initializeSecureHide(api) {
           .filter(Boolean);
 
         if (!actions.includes("reply")) {
+          return;
+        }
+
+        const placeholderTopicId =
+          placeholder.closest("article")?.dataset?.topicId;
+        if (placeholderTopicId && placeholderTopicId !== createdTopicId) {
           return;
         }
 
