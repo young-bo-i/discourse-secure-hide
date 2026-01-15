@@ -10,6 +10,17 @@ const pendingReplyUnlockPostIds = new Set();
 const pendingReplyUnlockTopicIdsByPostId = new Map();
 const checkedPostIds = new Set();
 
+function findPostRootElement(postId) {
+  if (!postId) {
+    return;
+  }
+
+  return (
+    document.querySelector(`article[data-post-id="${postId}"]`) ||
+    document.querySelector(`.reply[data-post-id="${postId}"]`)
+  );
+}
+
 function buildRequirementsList({ actions }) {
   const list = document.createElement("ul");
   list.className = "secure-hide-placeholder__requirements";
@@ -239,9 +250,7 @@ function initializeSecureHide(api) {
       return;
     }
 
-    const postElement = document.querySelector(
-      `article#post_${post.id}, .topic-post[data-post-id="${post.id}"]`
-    );
+    const postElement = findPostRootElement(post.id.toString()) || document;
     if (!postElement) {
       return;
     }
@@ -294,14 +303,7 @@ function initializeSecureHide(api) {
           continue;
         }
 
-        const postElement = document.querySelector(
-          `article#post_${postId}, .topic-post[data-post-id="${postId}"]`
-        );
-        if (!postElement) {
-          continue;
-        }
-
-        unlockPostBlocks(postElement, postId.toString(), {
+        unlockPostBlocks(document, postId.toString(), {
           showLockedNotice: true,
         });
       }
@@ -341,14 +343,7 @@ function initializeSecureHide(api) {
       });
 
       for (const postId of postIdsToTry) {
-        const postElement = document.querySelector(
-          `article#post_${postId}, .topic-post[data-post-id="${postId}"]`
-        );
-        if (!postElement) {
-          continue;
-        }
-
-        unlockPostBlocks(postElement, postId.toString(), {
+        unlockPostBlocks(document, postId.toString(), {
           showLockedNotice: true,
         });
       }
@@ -458,7 +453,7 @@ function initializeSecureHide(api) {
               if (resolvedTopicId) {
                 pendingReplyUnlockTopicIdsByPostId.set(
                   replyUnlockPostId.toString(),
-                  resolvedTopicId
+                  resolvedTopicId.toString()
                 );
               }
             }
