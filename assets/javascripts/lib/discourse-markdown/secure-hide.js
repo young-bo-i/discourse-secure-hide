@@ -3,11 +3,19 @@ export function setup(helper) {
     "div.secure-hide",
     "div.secure-hide[data-secure-hide-actions]",
     "div.secure-hide[data-secure-hide-mode]",
+    "span.secure-hide",
+    "span.secure-hide[data-secure-hide-actions]",
+    "span.secure-hide[data-secure-hide-mode]",
     "div.secure-hide-placeholder",
     "div.secure-hide-placeholder[data-secure-hide-actions]",
     "div.secure-hide-placeholder[data-secure-hide-block-index]",
     "div.secure-hide-placeholder[data-secure-hide-mode]",
     "div.secure-hide-placeholder[data-secure-hide-post-id]",
+    "span.secure-hide-placeholder",
+    "span.secure-hide-placeholder[data-secure-hide-actions]",
+    "span.secure-hide-placeholder[data-secure-hide-block-index]",
+    "span.secure-hide-placeholder[data-secure-hide-mode]",
+    "span.secure-hide-placeholder[data-secure-hide-post-id]",
   ]);
 
   helper.registerOptions((opts, siteSettings) => {
@@ -15,6 +23,27 @@ export function setup(helper) {
   });
 
   helper.registerPlugin((md) => {
+    md.inline.bbcode.ruler.push("secure_hide", {
+      tag: "secure_hide",
+      wrap(token, info) {
+        token.tag = "span";
+        token.attrJoin("class", "secure-hide");
+
+        const actions = info.attrs?.actions || info.attrs?._default;
+        const mode = info.attrs?.mode;
+
+        if (actions) {
+          token.attrSet("data-secure-hide-actions", actions);
+        }
+
+        if (mode) {
+          token.attrSet("data-secure-hide-mode", mode);
+        }
+
+        return true;
+      },
+    });
+
     md.block.bbcode.ruler.push("secure_hide", {
       tag: "secure_hide",
       wrap(token, info) {

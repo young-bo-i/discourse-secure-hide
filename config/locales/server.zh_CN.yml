@@ -1,0 +1,13 @@
+zh_CN:
+  site_settings:
+    secure_hide_enabled: "启用 Secure Hide 插件？"
+  secure_hide:
+    errors:
+      not_unlocked: "需要先解锁才能查看。"
+    excerpt:
+      hidden: "隐藏内容"
+    placeholder:
+      fallback: "隐藏内容。登录并解锁后可见。"
+    raw:
+      hidden: "[隐藏内容]"
+

@@ -6,7 +6,7 @@ module DiscourseSecureHide
     SOURCE_CSS_CLASS = "secure-hide"
 
     def self.extract!(doc, post)
-      nodes = doc.css("div.#{SOURCE_CSS_CLASS}")
+      nodes = doc.css(".#{SOURCE_CSS_CLASS}")
 
       if nodes.blank?
         if post.custom_fields[DiscourseSecureHide::POST_CUSTOM_FIELD].present?
@@ -22,7 +22,7 @@ module DiscourseSecureHide
       nodes.each_with_index do |node, index|
         blocks << { "html" => node.inner_html }
 
-        placeholder = Nokogiri::XML::Node.new("div", doc)
+        placeholder = Nokogiri::XML::Node.new(node.name, doc)
         placeholder["class"] = PLACEHOLDER_CSS_CLASS
         placeholder["data-secure-hide-post-id"] = post.id.to_s
         placeholder["data-secure-hide-block-index"] = index.to_s

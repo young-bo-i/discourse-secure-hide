@@ -1,0 +1,36 @@
+zh_CN:
+  js:
+    composer:
+      secure_hide_text: "隐藏内容"
+    secure_hide:
+      button:
+        login: "登录"
+        like: "点赞"
+        reply: "回复解锁"
+        unlock: "解锁"
+      composer:
+        title: "隐藏内容"
+        toolbar_label: "隐藏内容"
+        insert: "插入"
+        mode:
+          title: "解锁模式"
+          any: "满足任一选项"
+          all: "满足全部选项"
+        actions:
+          title: "解锁操作"
+        errors:
+          actions_required_title: "请选择解锁操作"
+          actions_required: "至少选择一个解锁操作。"
+      placeholder:
+        login_required: "登录后才能解锁这段内容。"
+        any_required: "完成以下任一操作即可查看："
+        all_required: "完成以下全部操作即可查看："
+        still_locked: "仍未解锁。完成要求后会自动显示。"
+      requirements:
+        action:
+          like: "点赞此帖"
+          reply: "在本话题回复"
+      visible_reason:
+        author: "你是作者，因此可见。"
+        staff: "你是管理员/版主，因此可见。"
+

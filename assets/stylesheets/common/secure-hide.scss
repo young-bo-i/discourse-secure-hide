@@ -1,9 +1,34 @@
 .secure-hide-placeholder {
+  position: relative;
+  overflow: hidden;
   border: 1px solid var(--primary-low);
   border-radius: var(--d-border-radius);
   padding: 0.75rem 1rem;
   background: var(--primary-very-low);
   color: var(--primary-high);
+}
+
+.secure-hide-placeholder::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    rgb(var(--primary-rgb), 0.06),
+    rgb(var(--primary-rgb), 0.02),
+    rgb(var(--primary-rgb), 0.06)
+  );
+  filter: blur(0.6em);
+  transform: scale(1.2);
+  pointer-events: none;
+}
+
+.secure-hide-placeholder > * {
+  position: relative;
+}
+
+.secure-hide-placeholder.is-clickable {
+  cursor: pointer;
 }
 
 .secure-hide-placeholder__actions {
@@ -28,6 +53,14 @@
   opacity: 0.75;
 }
 
+.secure-hide-content {
+  display: block;
+}
+
+span.secure-hide-content {
+  display: inline;
+}
+
 .secure-hide-content__notice {
   margin-bottom: 0.5rem;
   padding: 0.5rem 0.75rem;
@@ -35,4 +68,10 @@
   background: var(--primary-very-low);
   color: var(--primary-high);
   font-size: var(--font-down-1);
+}
+
+.ProseMirror .secure-hide-editor {
+  border-radius: var(--d-border-radius);
+  box-shadow: 0 0 0 2px rgb(var(--primary-rgb), 0.12);
+  padding: 0.125rem 0.25rem;
 }

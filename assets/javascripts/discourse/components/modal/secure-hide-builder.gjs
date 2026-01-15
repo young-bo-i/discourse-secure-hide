@@ -29,15 +29,19 @@ export default class SecureHideBuilderModal extends Component {
     }
 
     const mode = data.mode === "all" ? "all" : "any";
-    const prefix = `[secure_hide mode=${mode} actions=${actions.join(",")}]\n`;
-    const suffix = `\n[/secure_hide]`;
+    const toolbarEvent = this.args.model.toolbarEvent;
 
-    this.args.model.toolbarEvent.applySurround(
-      prefix,
-      suffix,
-      "secure_hide_text",
-      { multiline: false, useBlockMode: true }
-    );
+    if (toolbarEvent?.commands?.toggleSecureHide) {
+      toolbarEvent.commands.toggleSecureHide({ mode, actions });
+    } else {
+      const prefix = `[secure_hide mode=${mode} actions=${actions.join(",")}]\n`;
+      const suffix = `\n[/secure_hide]`;
+
+      toolbarEvent.applySurround(prefix, suffix, "secure_hide_text", {
+        multiline: false,
+        useBlockMode: true,
+      });
+    }
 
     this.args.closeModal?.();
   }
@@ -49,7 +53,7 @@ export default class SecureHideBuilderModal extends Component {
       class="secure-hide-builder-modal"
     >
       <Form
-        @data={{hash mode="any" like=true reply=true}}
+        @data={{hash mode="any" like=false reply=true}}
         @onSubmit={{this.onSubmit}}
         @validate={{this.validate}}
         as |form|
@@ -58,18 +62,15 @@ export default class SecureHideBuilderModal extends Component {
           @name="mode"
           @title={{i18n "secure_hide.composer.mode.title"}}
           @format="full"
+          @validation="required"
           as |field|
         >
           <field.RadioGroup as |radioGroup|>
             <radioGroup.Radio @value="any">
-              <radioGroup.Title>
-                {{i18n "secure_hide.composer.mode.any"}}
-              </radioGroup.Title>
+              {{i18n "secure_hide.composer.mode.any"}}
             </radioGroup.Radio>
             <radioGroup.Radio @value="all">
-              <radioGroup.Title>
-                {{i18n "secure_hide.composer.mode.all"}}
-              </radioGroup.Title>
+              {{i18n "secure_hide.composer.mode.all"}}
             </radioGroup.Radio>
           </field.RadioGroup>
         </form.Field>

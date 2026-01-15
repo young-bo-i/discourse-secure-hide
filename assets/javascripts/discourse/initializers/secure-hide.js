@@ -7,6 +7,7 @@ import { i18n } from "discourse-i18n";
 
 const pendingReplyUnlockPostIds = new Set();
 const pendingReplyUnlockTopicIdsByPostId = new Map();
+const checkedPostIds = new Set();
 
 function buildRequirementsList({ actions }) {
   const list = document.createElement("ul");
@@ -75,20 +76,22 @@ function addSecondaryButton(actionsRow, { label, onClick }) {
 }
 
 function replaceWithUnlockedContent(placeholder, { html, reason }) {
-  const wrapper = document.createElement("div");
+  const isInline = placeholder.tagName === "SPAN";
+  const wrapper = document.createElement(isInline ? "span" : "div");
   wrapper.className = "secure-hide-content";
 
   if (reason && reason !== "unlocked") {
-    const banner = document.createElement("div");
+    const banner = document.createElement(isInline ? "span" : "div");
     banner.className = "secure-hide-content__notice";
     banner.textContent = i18n(`secure_hide.visible_reason.${reason}`);
     wrapper.append(banner);
   }
 
+  const bodyTag = isInline ? "span" : "div";
   const fragment = document
     .createRange()
     .createContextualFragment(
-      `<div class="secure-hide-content__body">${html}</div>`
+      `<${bodyTag} class="secure-hide-content__body">${html}</${bodyTag}>`
     );
   wrapper.append(fragment);
 
@@ -99,7 +102,11 @@ async function fetchHiddenBlocks(postId) {
   return ajax(`/secure-hide/posts/${postId}`);
 }
 
-async function unlockPostBlocks(postElement, postId) {
+async function unlockPostBlocks(
+  postElement,
+  postId,
+  { showLockedNotice } = {}
+) {
   const placeholders = postElement.querySelectorAll(
     `.secure-hide-placeholder[data-secure-hide-post-id="${postId}"]`
   );
@@ -129,12 +136,14 @@ async function unlockPostBlocks(postElement, postId) {
     }
   } catch (error) {
     if (error?.jqXHR?.status === 403) {
-      for (const placeholder of placeholders) {
-        const notice = placeholder.querySelector(
-          ".secure-hide-placeholder__notice"
-        );
-        if (notice) {
-          notice.textContent = i18n("secure_hide.placeholder.still_locked");
+      if (showLockedNotice) {
+        for (const placeholder of placeholders) {
+          const notice = placeholder.querySelector(
+            ".secure-hide-placeholder__notice"
+          );
+          if (notice) {
+            notice.textContent = i18n("secure_hide.placeholder.still_locked");
+          }
         }
       }
       return;
@@ -257,7 +266,9 @@ function initializeSecureHide(api) {
             return;
           }
 
-          await unlockPostBlocks(element, resolvedPostId);
+          await unlockPostBlocks(element, resolvedPostId, {
+            showLockedNotice: true,
+          });
         };
 
         if (shouldAutoFetch) {
@@ -268,10 +279,12 @@ function initializeSecureHide(api) {
           return;
         }
 
-        const unlockButton = addButton(actionsRow, {
-          label: i18n("secure_hide.button.unlock"),
-          onClick: tryUnlock,
-        });
+        const resolvedPostId =
+          placeholder.dataset.secureHidePostId || postId?.toString();
+        if (resolvedPostId && !checkedPostIds.has(resolvedPostId)) {
+          checkedPostIds.add(resolvedPostId);
+          unlockPostBlocks(element, resolvedPostId);
+        }
 
         if (actions.includes("like")) {
           const onLikeClick = () => {
@@ -296,15 +309,15 @@ function initializeSecureHide(api) {
 
         if (actions.includes("reply") && composer) {
           const onReplyClick = () => {
-            const resolvedPostId =
+            const replyUnlockPostId =
               placeholder.dataset.secureHidePostId || postId?.toString();
             const resolvedTopicId = helper?.model?.topic_id;
 
-            if (resolvedPostId) {
-              pendingReplyUnlockPostIds.add(resolvedPostId.toString());
+            if (replyUnlockPostId) {
+              pendingReplyUnlockPostIds.add(replyUnlockPostId.toString());
               if (resolvedTopicId) {
                 pendingReplyUnlockTopicIdsByPostId.set(
-                  resolvedPostId.toString(),
+                  replyUnlockPostId.toString(),
                   resolvedTopicId
                 );
               }
@@ -316,24 +329,41 @@ function initializeSecureHide(api) {
             });
           };
 
-          const replyButton = addSecondaryButton(actionsRow, {
+          const onPlaceholderClick = (event) => {
+            if (event.defaultPrevented) {
+              return;
+            }
+
+            const interactiveElement = event.target.closest(
+              "a, button, input, textarea, select"
+            );
+            if (interactiveElement) {
+              return;
+            }
+
+            onReplyClick();
+          };
+
+          const replyButton = addButton(actionsRow, {
             label: i18n("secure_hide.button.reply"),
             onClick: onReplyClick,
           });
 
+          placeholder.classList.add("is-clickable");
+          placeholder.addEventListener("click", onPlaceholderClick);
+
           cleanupHandlers.push(() =>
             replyButton.removeEventListener("click", onReplyClick)
           );
+          cleanupHandlers.push(() =>
+            placeholder.removeEventListener("click", onPlaceholderClick)
+          );
         }
-
-        cleanupHandlers.push(() =>
-          unlockButton.removeEventListener("click", tryUnlock)
-        );
       });
 
       return () => cleanupHandlers.forEach((fn) => fn());
     },
-    { onlyStream: true }
+    { id: "secure-hide" }
   );
 }
 

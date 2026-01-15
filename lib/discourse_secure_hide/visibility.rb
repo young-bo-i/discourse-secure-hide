@@ -2,6 +2,14 @@
 
 module DiscourseSecureHide
   class Visibility
+    def self.unlocks_available?
+      return false if !defined?(DiscourseSecureHide::Unlock)
+
+      DiscourseSecureHide::Unlock.table_exists?
+    rescue ActiveRecord::NoDatabaseError, ActiveRecord::StatementInvalid, PG::ConnectionBad
+      false
+    end
+
     def self.reason_for(guardian:, post:)
       return if post.blank?
 
@@ -14,7 +22,8 @@ module DiscourseSecureHide
       data = post.custom_fields[DiscourseSecureHide::POST_CUSTOM_FIELD]
       return if data.blank?
 
-      if DiscourseSecureHide::Unlock.where(user_id: user.id, post_id: post.id).exists?
+      if unlocks_available? &&
+           DiscourseSecureHide::Unlock.where(user_id: user.id, post_id: post.id).exists?
         return "unlocked"
       end
 
@@ -39,9 +48,14 @@ module DiscourseSecureHide
           satisfied_by_action.find { |_, satisfied| satisfied }&.first || "any"
         end
 
-      DiscourseSecureHide::Unlock.find_or_create_by(user_id: user.id, post_id: post.id) do |unlock|
-        unlock.unlocked_at = Time.zone.now
-        unlock.unlocked_via = unlocked_via
+      if unlocks_available?
+        DiscourseSecureHide::Unlock.find_or_create_by(
+          user_id: user.id,
+          post_id: post.id,
+        ) do |unlock|
+          unlock.unlocked_at = Time.zone.now
+          unlock.unlocked_via = unlocked_via
+        end
       end
 
       "unlocked"
