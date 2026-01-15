@@ -3,6 +3,7 @@ import { hash } from "@ember/helper";
 import { action } from "@ember/object";
 import DModal from "discourse/components/d-modal";
 import Form from "discourse/components/form";
+import { and } from "discourse/truth-helpers";
 import { i18n } from "discourse-i18n";
 
 export default class SecureHideBuilderModal extends Component {
@@ -28,7 +29,7 @@ export default class SecureHideBuilderModal extends Component {
       actions.push("reply");
     }
 
-    const mode = data.mode === "all" ? "all" : "any";
+    const mode = actions.length > 1 && data.mode === "all" ? "all" : "any";
     const toolbarEvent = this.args.model.toolbarEvent;
 
     if (toolbarEvent?.commands?.toggleSecureHide) {
@@ -58,23 +59,6 @@ export default class SecureHideBuilderModal extends Component {
         @validate={{this.validate}}
         as |form|
       >
-        <form.Field
-          @name="mode"
-          @title={{i18n "secure_hide.composer.mode.title"}}
-          @format="full"
-          @validation="required"
-          as |field|
-        >
-          <field.RadioGroup as |radioGroup|>
-            <radioGroup.Radio @value="any">
-              {{i18n "secure_hide.composer.mode.any"}}
-            </radioGroup.Radio>
-            <radioGroup.Radio @value="all">
-              {{i18n "secure_hide.composer.mode.all"}}
-            </radioGroup.Radio>
-          </field.RadioGroup>
-        </form.Field>
-
         <form.CheckboxGroup
           @title={{i18n "secure_hide.composer.actions.title"}}
           as |checkboxGroup|
@@ -95,6 +79,25 @@ export default class SecureHideBuilderModal extends Component {
             <field.Checkbox />
           </checkboxGroup.Field>
         </form.CheckboxGroup>
+
+        {{#if (and form.data.like form.data.reply)}}
+          <form.Field
+            @name="mode"
+            @title={{i18n "secure_hide.composer.mode.title"}}
+            @format="full"
+            @validation="required"
+            as |field|
+          >
+            <field.RadioGroup as |radioGroup|>
+              <radioGroup.Radio @value="any">
+                {{i18n "secure_hide.composer.mode.any"}}
+              </radioGroup.Radio>
+              <radioGroup.Radio @value="all">
+                {{i18n "secure_hide.composer.mode.all"}}
+              </radioGroup.Radio>
+            </field.RadioGroup>
+          </form.Field>
+        {{/if}}
 
         <form.Actions>
           <form.Submit

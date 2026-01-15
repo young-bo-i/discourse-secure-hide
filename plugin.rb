@@ -3,7 +3,7 @@
 # name: discourse-secure-hide
 # about: Hide portions of a post until the viewer unlocks them via configured actions.
 # version: 0.1
-# authors: Discourse Plugin Authors
+# authors: enterscholar
 # url: https://github.com/discourse/discourse/tree/main/plugins/discourse-secure-hide
 
 enabled_site_setting :secure_hide_enabled
