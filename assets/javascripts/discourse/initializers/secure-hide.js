@@ -80,7 +80,12 @@ function replaceWithUnlockedContent(placeholder, { html, reason }) {
   const wrapper = document.createElement(isInline ? "span" : "div");
   wrapper.className = "secure-hide-content";
 
-  if (reason && reason !== "unlocked") {
+  const privileged = reason && reason !== "unlocked";
+  if (privileged) {
+    wrapper.classList.add("secure-hide-content--privileged");
+  }
+
+  if (privileged) {
     const banner = document.createElement(isInline ? "span" : "div");
     banner.className = "secure-hide-content__notice";
     banner.textContent = i18n(`secure_hide.visible_reason.${reason}`);
@@ -216,6 +221,43 @@ function initializeSecureHide(api) {
 
       unlockPostBlocks(postElement, postId.toString());
     }
+
+    if (!createdPost?.topic_id) {
+      return;
+    }
+
+    const placeholders = document.querySelectorAll(".secure-hide-placeholder");
+    if (!placeholders.length) {
+      return;
+    }
+
+    const postIdsToTry = new Set();
+    placeholders.forEach((placeholder) => {
+      const actions = (placeholder.dataset.secureHideActions || "")
+        .split(",")
+        .map((action) => action.trim())
+        .filter(Boolean);
+
+      if (!actions.includes("reply")) {
+        return;
+      }
+
+      const placeholderPostId = placeholder.dataset.secureHidePostId;
+      if (placeholderPostId) {
+        postIdsToTry.add(placeholderPostId);
+      }
+    });
+
+    for (const postId of postIdsToTry) {
+      const postElement = document.querySelector(
+        `article#post_${postId}, .topic-post[data-post-id="${postId}"]`
+      );
+      if (!postElement) {
+        continue;
+      }
+
+      unlockPostBlocks(postElement, postId.toString());
+    }
   });
 
   api.decorateCookedElement(
@@ -226,8 +268,9 @@ function initializeSecureHide(api) {
       }
 
       const currentUser = api.getCurrentUser();
-      const postId = helper?.model?.id;
-      const postUserId = helper?.model?.user_id;
+      const model = helper?.getModel?.() || helper?.model;
+      const postId = model?.id;
+      const postUserId = model?.user_id;
       const composer = api.container.lookup("service:composer");
 
       const cleanupHandlers = [];
@@ -311,7 +354,7 @@ function initializeSecureHide(api) {
           const onReplyClick = () => {
             const replyUnlockPostId =
               placeholder.dataset.secureHidePostId || postId?.toString();
-            const resolvedTopicId = helper?.model?.topic_id;
+            const resolvedTopicId = model?.topic_id;
 
             if (replyUnlockPostId) {
               pendingReplyUnlockPostIds.add(replyUnlockPostId.toString());
@@ -323,10 +366,19 @@ function initializeSecureHide(api) {
               }
             }
 
-            composer.open({
-              action: Composer.REPLY,
-              post: helper.model,
-            });
+            if (!model) {
+              return;
+            }
+
+            const composerOpts = { action: Composer.REPLY };
+            const postNumber = model.get?.("post_number") ?? model.post_number;
+            if (postNumber === 1) {
+              composerOpts.topic = model.get?.("topic") ?? model.topic;
+            } else {
+              composerOpts.post = model;
+            }
+
+            composer.open(composerOpts);
           };
 
           const onPlaceholderClick = (event) => {

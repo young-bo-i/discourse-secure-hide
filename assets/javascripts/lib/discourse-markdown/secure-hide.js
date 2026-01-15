@@ -25,20 +25,30 @@ export function setup(helper) {
   helper.registerPlugin((md) => {
     md.inline.bbcode.ruler.push("secure_hide", {
       tag: "secure_hide",
-      wrap(token, info) {
-        token.tag = "span";
-        token.attrJoin("class", "secure-hide");
+      wrap(startToken, endToken, tagInfo) {
+        startToken.type = `bbcode_${tagInfo.tag}_open`;
+        startToken.tag = "span";
+        startToken.nesting = 1;
+        startToken.markup = startToken.content;
+        startToken.content = "";
+        startToken.attrs = [["class", "secure-hide"]];
 
-        const actions = info.attrs?.actions || info.attrs?._default;
-        const mode = info.attrs?.mode;
+        const actions = tagInfo.attrs?.actions || tagInfo.attrs?._default;
+        const mode = tagInfo.attrs?.mode;
 
         if (actions) {
-          token.attrSet("data-secure-hide-actions", actions);
+          startToken.attrSet("data-secure-hide-actions", actions);
         }
 
         if (mode) {
-          token.attrSet("data-secure-hide-mode", mode);
+          startToken.attrSet("data-secure-hide-mode", mode);
         }
+
+        endToken.type = `bbcode_${tagInfo.tag}_close`;
+        endToken.tag = "span";
+        endToken.nesting = -1;
+        endToken.markup = startToken.markup;
+        endToken.content = "";
 
         return true;
       },

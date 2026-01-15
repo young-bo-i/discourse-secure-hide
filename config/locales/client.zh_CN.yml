@@ -31,6 +31,5 @@ zh_CN:
           like: "点赞此帖"
           reply: "在本话题回复"
       visible_reason:
-        author: "你是作者，因此可见。"
-        staff: "你是管理员/版主，因此可见。"
-
+        author: "隐藏片段（作者可见）"
+        staff: "隐藏片段（管理员/版主可见）"

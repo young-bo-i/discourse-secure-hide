@@ -61,13 +61,41 @@ span.secure-hide-content {
   display: inline;
 }
 
-.secure-hide-content__notice {
-  margin-bottom: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border-left: 3px solid var(--primary-medium);
+.secure-hide-content--privileged {
+  position: relative;
+  border: 1px dashed var(--primary-low);
+  border-radius: var(--d-border-radius);
   background: var(--primary-very-low);
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+}
+
+span.secure-hide-content--privileged {
+  padding: 0.1rem 0.25rem;
+  margin: 0;
+}
+
+.secure-hide-content__notice {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid rgb(var(--primary-rgb), 0.18);
+  border-radius: 999px;
+  background: rgb(var(--primary-rgb), 0.08);
   color: var(--primary-high);
   font-size: var(--font-down-1);
+}
+
+.secure-hide-content--privileged > .secure-hide-content__notice {
+  position: absolute;
+  top: -0.7rem;
+  left: 0.75rem;
+}
+
+span.secure-hide-content--privileged > .secure-hide-content__notice {
+  position: static;
+  margin-right: 0.25rem;
 }
 
 .ProseMirror .secure-hide-editor {

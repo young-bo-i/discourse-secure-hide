@@ -31,5 +31,5 @@ en:
           like: "Like this post"
           reply: "Reply in this topic"
       visible_reason:
-        author: "Visible to you because you are the author."
-        staff: "Visible to you because you are staff."
+        author: "Hidden segment (author)."
+        staff: "Hidden segment (staff)."

@@ -82,6 +82,11 @@ const extension = {
   },
 
   parse: {
+    bbcode_secure_hide: {
+      block: "inline_secure_hide",
+      getAttrs: parseTokenAttrs,
+    },
+
     wrap_bbcode(state, token) {
       const klass = token.attrGet("class") || "";
       if (!/\bsecure-hide\b/.test(klass)) {
