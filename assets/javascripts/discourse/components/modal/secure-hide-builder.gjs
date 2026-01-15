@@ -57,7 +57,7 @@ export default class SecureHideBuilderModal extends Component {
         @data={{hash mode="any" like=false reply=true}}
         @onSubmit={{this.onSubmit}}
         @validate={{this.validate}}
-        as |form|
+        as |form data|
       >
         <form.CheckboxGroup
           @title={{i18n "secure_hide.composer.actions.title"}}
@@ -80,7 +80,7 @@ export default class SecureHideBuilderModal extends Component {
           </checkboxGroup.Field>
         </form.CheckboxGroup>
 
-        {{#if (and form.data.like form.data.reply)}}
+        {{#if (and data.like data.reply)}}
           <form.Field
             @name="mode"
             @title={{i18n "secure_hide.composer.mode.title"}}
