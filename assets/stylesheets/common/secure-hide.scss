@@ -1,0 +1,38 @@
+.secure-hide-placeholder {
+  border: 1px solid var(--primary-low);
+  border-radius: var(--d-border-radius);
+  padding: 0.75rem 1rem;
+  background: var(--primary-very-low);
+  color: var(--primary-high);
+}
+
+.secure-hide-placeholder__actions {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.secure-hide-placeholder__notice {
+  margin-bottom: 0.5rem;
+  font-size: var(--font-down-1);
+  color: var(--primary-medium);
+}
+
+.secure-hide-placeholder__requirements {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.secure-hide-placeholder.is-loading {
+  opacity: 0.75;
+}
+
+.secure-hide-content__notice {
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--primary-medium);
+  background: var(--primary-very-low);
+  color: var(--primary-high);
+  font-size: var(--font-down-1);
+}

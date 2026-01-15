@@ -1,0 +1,5 @@
+plugins:
+  secure_hide_enabled:
+    default: false
+    client: true
+

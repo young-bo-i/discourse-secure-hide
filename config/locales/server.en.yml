@@ -1,0 +1,12 @@
+en:
+  site_settings:
+    secure_hide_enabled: "Enable Secure Hide plugin?"
+  secure_hide:
+    errors:
+      not_unlocked: "You must unlock this content first."
+    excerpt:
+      hidden: "hidden content"
+    placeholder:
+      fallback: "Hidden content. Log in and unlock to view."
+    raw:
+      hidden: "[hidden content]"

@@ -1,0 +1,35 @@
+en:
+  js:
+    composer:
+      secure_hide_text: "Hidden content"
+    secure_hide:
+      button:
+        login: "Log in"
+        like: "Like"
+        reply: "Reply"
+        unlock: "Unlock"
+      composer:
+        title: "Secure hide"
+        toolbar_label: "Secure hide"
+        insert: "Insert"
+        mode:
+          title: "Unlock mode"
+          any: "Any selected action"
+          all: "All selected actions"
+        actions:
+          title: "Unlock actions"
+        errors:
+          actions_required_title: "Select an unlock action"
+          actions_required: "Pick at least one action to unlock this content."
+      placeholder:
+        login_required: "Log in to unlock this content."
+        any_required: "Unlock this content by completing any one of:"
+        all_required: "Unlock this content by completing all of:"
+        still_locked: "Still locked. Complete the actions above, then try again."
+      requirements:
+        action:
+          like: "Like this post"
+          reply: "Reply in this topic"
+      visible_reason:
+        author: "Visible to you because you are the author."
+        staff: "Visible to you because you are staff."
